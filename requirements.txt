@@ -1,0 +1,7 @@
+psutil
+ollama
+PySide6
+pyttsx3
+faster-whisper
+sounddevice
+numpy
