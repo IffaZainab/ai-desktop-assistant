@@ -5,3 +5,11 @@ pyttsx3
 faster-whisper
 sounddevice
 numpy
+pycaw
+comtypes
+screen-brightness-control
+pillow
+pyautogui
+pyperclip
+pywinauto
+pywin32

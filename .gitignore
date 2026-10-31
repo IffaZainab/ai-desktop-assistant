@@ -20,3 +20,8 @@ Thumbs.db
 # Local data (we will add the SQLite database in Step 6)
 *.db
 *.sqlite3
+
+# Local debug output (may contain private names)
+whatsapp_ui.txt
+inspect_whatsapp.py
+test_controls.py

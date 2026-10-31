@@ -48,6 +48,15 @@ def list_running_apps() -> str:
     names = sorted(names, key=str.lower)
     return f"{len(names)} running processes:\n" + "\n".join(names[:40])
 
+# The last thing the assistant opened, so "close this app" knows what "this" means
+LAST_OPENED = ""
+
+
+def _remember_opened(name: str):
+    global LAST_OPENED
+    name = re.sub(r"^(https?://)?(www\.)?", "", str(name).strip().lower())
+    LAST_OPENED = name.split(".")[0] if ("." in name and " " not in name) else name
+
 
 # ---------- OPEN THINGS ----------
 
@@ -122,6 +131,7 @@ def open_app(app_name: str, browser: str = "") -> str:
         return open_website(app_name, browser)
     try:
         subprocess.Popen(["explorer.exe", f"shell:AppsFolder\\{app['id']}"])
+        _remember_opened(app["name"])        
         return f"Opened {app['name']}."
     except Exception as e:
         return f"Could not open {app['name']}: {e}"
@@ -160,29 +170,94 @@ def open_website(url: str, browser: str = "") -> str:
             subprocess.Popen(f'start "" {command} "{full_url}"', shell=True)
         else:
             webbrowser.open(full_url)
+        _remember_opened(url)            
         return f"Opened {url}."
     except Exception as e:
         return f"Could not open website: {e}"
 
 
+# Windows Settings pages (Microsoft's ms-settings: links).
+# To support another page, just add one line here.
 SETTINGS_PAGES = {
-    "bluetooth": "ms-settings:bluetooth",
+    # network
     "wifi": "ms-settings:network-wifi",
+    "wi fi": "ms-settings:network-wifi",
+    "network": "ms-settings:network-status",
+    "ethernet": "ms-settings:network-ethernet",
+    "vpn": "ms-settings:network-vpn",
+    "airplane": "ms-settings:network-airplanemode",
+    "hotspot": "ms-settings:network-mobilehotspot",
+    "proxy": "ms-settings:network-proxy",
+    "data usage": "ms-settings:datausage",
+    # devices
+    "bluetooth": "ms-settings:bluetooth",
+    "printers": "ms-settings:printers",
+    "mouse": "ms-settings:mousetouchpad",
+    "touchpad": "ms-settings:devices-touchpad",
+    "typing": "ms-settings:typing",
+    # display, sound, power
     "display": "ms-settings:display",
+    "night light": "ms-settings:nightlight",
     "sound": "ms-settings:sound",
+    "notifications": "ms-settings:notifications",
+    "power": "ms-settings:powersleep",
+    "sleep": "ms-settings:powersleep",
     "battery": "ms-settings:batterysaver",
+    "battery saver": "ms-settings:batterysaver",
+    "energy saver": "ms-settings:batterysaver",
+    "power saving": "ms-settings:batterysaver",
+    "power saver": "ms-settings:batterysaver",
     "storage": "ms-settings:storagesense",
+    "multitasking": "ms-settings:multitasking",
+    "about": "ms-settings:about",
+    # personalization
+    "personalization": "ms-settings:personalization",
+    "background": "ms-settings:personalization-background",
+    "colors": "ms-settings:personalization-colors",
+    "themes": "ms-settings:themes",
+    "lock screen": "ms-settings:lockscreen",
+    "taskbar": "ms-settings:taskbar",
+    "start menu": "ms-settings:personalization-start",
+    # apps
     "apps": "ms-settings:appsfeatures",
+    "default apps": "ms-settings:defaultapps",
+    "startup apps": "ms-settings:startupapps",
+    # accounts, time, privacy, system
+    "accounts": "ms-settings:yourinfo",
+    "sign in": "ms-settings:signinoptions",
+    "date and time": "ms-settings:dateandtime",
+    "language": "ms-settings:regionlanguage",
+    "game bar": "ms-settings:gaming-gamebar",
+    "accessibility": "ms-settings:easeofaccess",
+    "privacy": "ms-settings:privacy",
+    "camera": "ms-settings:privacy-webcam",
+    "microphone": "ms-settings:privacy-microphone",
+    "location": "ms-settings:privacy-location",
     "update": "ms-settings:windowsupdate",
+    "windows update": "ms-settings:windowsupdate",
+    "recovery": "ms-settings:recovery",
 }
+
+
+def find_settings_page(text: str):
+    """Finds the best settings page named inside a sentence (longest match wins).
+    Returns the page name, or None."""
+    sentence = re.sub(r"[^a-z0-9 ]", " ", text.lower())
+    best, best_length = None, 0
+    for key in SETTINGS_PAGES:
+        if re.search(rf"\b{re.escape(key)}\b", sentence) and len(key) > best_length:
+            best, best_length = key, len(key)
+    return best
 
 
 def open_settings(page: str) -> str:
     key = page.strip().lower()
-    uri = SETTINGS_PAGES.get(key)
-    if uri is None:
-        return f"Unknown settings page. Available: {', '.join(SETTINGS_PAGES)}"
-    os.startfile(uri)
+    if key not in SETTINGS_PAGES:
+        key = find_settings_page(key)
+    if key is None:
+        return f"I don't know a settings page called '{page}'."
+    os.startfile(SETTINGS_PAGES[key])
+    _remember_opened("settings")    
     return f"Opened {key} settings."
 
 
@@ -282,6 +357,7 @@ def _open(query: str, kind: str) -> str:
         return f"Could not find any {kind} matching '{query}'."
     if len(matches) == 1:
         os.startfile(matches[0])
+        _remember_opened(Path(matches[0]).stem)        
         return f"Opened: {matches[0]}"
     LAST_RESULTS = matches
     return (
@@ -319,6 +395,7 @@ def open_result(number) -> str:
         return f"Please choose a number between 1 and {len(LAST_RESULTS)}."
     path = LAST_RESULTS[index]
     os.startfile(path)
+    _remember_opened(Path(path).stem)    
     return f"Opened: {path}"
 
 # ---------- WEATHER & TIME ----------
