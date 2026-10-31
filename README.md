@@ -4,9 +4,12 @@ A Windows desktop assistant that you control with text or voice commands.
 It runs locally: Ollama (Qwen2.5 1.5B) picks the right tool, and the app performs the real action.
 
 ## Features
-- Open apps, websites and Windows settings
-- Search files and folders across the whole computer
-- RAM, disk and running-app information
+- Open apps (auto-detected), websites and any Windows Settings page
+- Search files and folders across all drives, open by number
+- RAM, disk, battery and running-app information
+- Volume, brightness, Wi-Fi, Bluetooth and airplane mode controls
+- Open a WhatsApp chat by name
+- Close, minimize, maximize or restore app windows
 - Weather and time
 - Voice input (faster-whisper) and spoken replies (pyttsx3)
 
